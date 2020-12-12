@@ -1,0 +1,66 @@
+{% extends "auctions/layout.html" %}
+
+{% load crispy_forms_tags %}
+
+{% block body %}
+    <div>
+        <h2>Listing: {{ listing.title }}</h2>
+        <form action="{% url 'watchlist_add' %}">
+            <button type="submit" class="btn">
+                <span class="badge badge-primary">Watchlist</span>
+            </button>
+        </form>
+
+        {% if  listing.url  %}
+            <img src="{{ listing.url }}" alt="{{ listing.title }}" width="300" height="300">
+        {% else %}
+            <p class="mb-4"></p>
+        {% endif %}
+
+        <p>{{ listing.description }}</p>
+        <h2>${{ listing.currentPrice }}</h2>
+{#        <form action="{% url 'bid' %}">#}
+{#            {% csrf_token %}#}
+{#            <small id="bidHelp" class="form-text">{{ bids }} bid(s) so far.#}
+{#                {% if winner %}#}
+{#                    Your bid is the current bid.#}
+{#                {% endif %}#}
+{#            </small>#}
+{#            {{ form|crispy}}#}
+{#            <button type="submit" class="btn btn-primary">Place Bid</button>#}
+{#        </form>#}
+
+        <form action="{% url 'bid' listing.id %}" method="post">
+{#        <form method="post">#}
+            {% csrf_token %}
+            <div class="form-group">
+                <small id="bidHelp" class="form-text">{{ bids }} bid(s) so far.
+                {% if winner %}
+                    Your bid is the current bid.
+                {% endif %}
+                </small>
+                <input type="number" id="bid" name="bid" step=".01" min="{{ listing.currentPrice|add:0.01 }}" max="9999999.99" class="form-control form-control-sm" aria-describedby="bidHelp" placeholder="Bid">
+            </div>
+            <button type="submit" class="btn btn-primary">Place Bid</button>
+        </form>
+        <h3>Details</h3>
+        <ul>
+            <li>Listed by: {{ listing.creator }}</li>
+            {% if  listing.category  %}
+                <li>Category: {{ listing.category }}</li>
+            {% else %}
+                <li>Category: No Category Listed</li>
+            {% endif %}
+        </ul>
+    </div>
+
+
+
+{#    {% for listing in listings %}#}
+{#            <li>#}
+{#                <a href="{% url 'listing' listing.id %}">#}
+{#                    {{ listing.title }}: {{ listing.description }} {{ listing.currentPrice }}#}
+{#                </a>#}
+{#            </li>#}
+{#        {% endfor %}#}
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <h2>Active Listings</h2>
+
+
+    <table class="table text-center table-hover">
+{#        <thead>#}
+{#            <tr>#}
+{#                <th scope="col"></th>#}
+{#                <th scope="col"></th>#}
+{#                <th scope="col"></th>#}
+{#                <th scope="col"></th>#}
+{#            </tr>#}
+{#        </thead>#}
+        <tbody>
+            {% for listing in listings %}
+                <tr style="cursor: pointer; cursor: hand;", onclick="window.location='{% url "listing" listing.id %}';">
+                    <td>
+                        {% if  listing.url  %}
+                            <img class="align-self-center img-fluid" src="{{ listing.url }}" alt="{{ listing.title }}" width="100" height="100" style="text-align: center">
+                        {% else %}
+                            <img class="align-self-center img-fluid mt-3" src="" alt="No photo" width="100" height="100" style="text-align: center">
+                        {% endif %}
+                    </td>
+                    <td>
+                        <h4>{{ listing.title }}</h4>
+{#                        <a href="{% url 'listing' listing.id %}" class="stretched-link"></a>#}
+                        <strong>Price: </strong>${{ listing.currentPrice }}
+                        <div class="text-muted">Created: {{ listing.created }}</div>
+                    </td>
+                    <td colspan="2"></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+{#    {% for listing in listings %}#}
+{##}
+{#        <a href="{% url 'listing' listing.id %}">#}
+{##}
+{#            <div class="row">#}
+{##}
+{#            <div class="col-1"></div>#}
+{#            <div class="col-2">#}
+{#                {% if  listing.url  %}#}
+{#                    <img src="{{ listing.url }}" alt="{{ listing.title }}">#}
+{#                {% else %}#}
+{#                    <img src="" alt="No photo">#}
+{#                {% endif %}#}
+{#            </div>#}
+{#            <div class="col-1"></div>#}
+{#            <div class="col-4">#}
+{#                <h4>{{ listing.title }}</h4>#}
+{#                <strong>Price: </strong>${{ listing.currentPrice }}#}
+{#                <div class="text-muted">Created:{{ listing.created }}</div>#}
+{#            </div>#}
+{#            </div>#}
+{#        </a>#}
+{#            <li>#}
+{#                <a href="{% url 'listing' listing.id %}">#}
+{#                    {{ listing.title }}#}
+{#                </a>#}
+{#            </li>#}
+{#        {% endfor %}#}
+
+{% endblock %}
