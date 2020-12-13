@@ -16,8 +16,7 @@ def index(request):
     :param request: HTTP request
     :return: homepage
     """
-
-    return render(request, "auctions/index.html", {"listings": Listing.objects.all()})
+    return render(request, "auctions/index.html", {"listings": Listing.objects.filter(status=Listing.Status.Active)})
 
 
 def login_view(request):
@@ -85,58 +84,48 @@ def register(request):
 
 def listing(request, listing_id):
     """
+    If listing is still active users should be able to view all details about the listing including title,
+    description, photo (if exists), category, current price of the listing, comments on the listing
+    If listing is closed by the creator and the user has won, it is shown on the page
+
     :param request: HTTP request
     :param listing_id: listing id (pk)
     :return: corresponding listing page
     """
-    # if request.method == 'POST':
-    #     print(request)
-    #     print(request.POST)
-    #     return HttpResponseRedirect("/")
+    if request.method == 'POST':
+        listing = Listing.objects.get(pk=listing_id)
+        listing.status = Listing.Status.Closed
+        listing.save()
+        print(request)
+        print(request.POST)
+        return HttpResponseRedirect("/")
 
     # select listing from db
     try:
         listing = Listing.objects.get(id=listing_id)
     # if listing could not be found
     except Listing.DoesNotExist:
-        raise Http404("Listing not found.")
+        return HttpResponseBadRequest("Bad Request: listing does not exist")
 
-    # if listing is still active users should be able to view all details about the listing
-    # Title, description, photo (if exists), category, current price of the listing, comments on the listing
-    if listing.status == 'Active':
-        winner = False
-        on_watchlist = False
-        try:
-            if listing.number_of_bids != 0 and listing.bids.get(price=listing.price).user == request.user:
-                winner = True
-            if request.user.is_authenticated:
-                watchlist_item = request.user.watchlist.get(listing=listing)
-                on_watchlist = True
-            # winner = Bid.objects.get(price=listing.currentPrice, listing=listing_id).user
-        except Bid.DoesNotExist:
-            print("Bid does not exist")
-        except Watchlist.DoesNotExist:
-            print("Not on watchlist")
-
-        return render(request, "auctions/listing.html", {"listing": listing, "winner": winner, "form": BidForm(), "on_watchlist": on_watchlist})
-
-    # if listing is closed by the creator and the user(visitor) has won, it is shown on the page
-    else:
-        try:
-            winner = listing.bids.get(price=listing.price).user
-
-        except Bid.DoesNotExist:
-            winner = False
-            print("Does not exist")
-        if winner == request.user:
+    winner = False
+    on_watchlist = False
+    try:
+        if listing.number_of_bids != 0 and listing.bids.get(price=listing.price).user == request.user:
             winner = True
-        return render(request, "auctions/closed.html", {"listing": listing, "winner": winner, "form": BidForm()})
+        if request.user.is_authenticated:
+            watchlist_item = request.user.watchlist.get(listing=listing)
+            on_watchlist = True
+    except Bid.DoesNotExist:
+        return HttpResponseBadRequest("Bad Request: bid does not exist")
+    except Watchlist.DoesNotExist:
+        return HttpResponseBadRequest("Bad Request: watchlist does not exist")
+
+    return render(request, "auctions/listing.html", {"listing": listing, "winner": winner, "on_watchlist": on_watchlist})
 
 
 @login_required(login_url='login', redirect_field_name='watchlist')
 def watchlist(request):
-    watchlist = request.user.watchlist.all()
-    return render(request, "auctions/watchlist.html", {"watchlist": watchlist})
+    return render(request, "auctions/watchlist.html", {"watchlist": request.user.watchlist.all()})
 
 
 @login_required(login_url='login', redirect_field_name='create_listing')
@@ -187,11 +176,9 @@ def watchlist_add(request, listing_id):
     try:
         listing = Listing.objects.get(pk=listing_id)
     except Listing.DoesNotExist:
-        print("listing does not exist")
-        return HttpResponseRedirect(reverse("index"))
+        return HttpResponseBadRequest("Bad Request: listing does not exist")
     watchlist_item = Watchlist(user=request.user, listing=listing)
     watchlist_item.save()
-    # request.user.watchlist.add(listing)
     return HttpResponseRedirect(reverse("index"))
 
 
@@ -208,12 +195,10 @@ def watchlist_remove(request, listing_id):
     try:
         listing = Listing.objects.get(pk=listing_id)
     except Listing.DoesNotExist:
-        print("listing does not exist")
-        return HttpResponseRedirect(reverse("index"))
+        return HttpResponseBadRequest("Bad Request: listing does not exist")
     watchlist_item = request.user.watchlist.get(listing=listing)
     watchlist_item.delete()
     return HttpResponseRedirect(reverse("index"))
-
 
 
 @login_required(login_url='login', redirect_field_name='listing')
@@ -238,7 +223,7 @@ def bid(request, listing_id):
     try:
         user = User.objects.get(username=request.user)
     except User.DoesNotExist:
-        return HttpResponseRedirect(reverse("index"))
+        return HttpResponseBadRequest("Bad Request: user does not exist")
 
     new_bid = Bid.objects.create(user=user, listing=listing, price=bid)
     listing.bids.add(new_bid)
