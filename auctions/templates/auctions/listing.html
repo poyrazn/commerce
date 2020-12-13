@@ -4,21 +4,29 @@
 
 {% block body %}
     <div>
-        <h2>Listing: {{ listing.title }}</h2>
-        <form action="{% url 'watchlist_add' %}">
+        <h2>Listing: {{ listing.product.title }}</h2>
+    {% if on_watchlist %}
+        <form action="{% url 'watchlist_remove' listing.id %}">
+            <button type="submit" class="btn">
+                <span class="badge badge-secondary">Watchlist</span>
+            </button>
+        </form>
+    {% else %}
+        <form action="{% url 'watchlist_add' listing.id %}">
             <button type="submit" class="btn">
                 <span class="badge badge-primary">Watchlist</span>
             </button>
         </form>
+    {% endif %}
 
-        {% if  listing.url  %}
-            <img src="{{ listing.url }}" alt="{{ listing.title }}" width="300" height="300">
+        {% if  listing.product.url  %}
+            <img src="{{ listing.product.url }}" alt="{{ listing.product.title }}" width="300" height="300">
         {% else %}
             <p class="mb-4"></p>
         {% endif %}
 
-        <p>{{ listing.description }}</p>
-        <h2>${{ listing.currentPrice }}</h2>
+        <p>{{ listing.product.description }}</p>
+        <h2>${{ listing.price }}</h2>
 {#        <form action="{% url 'bid' %}">#}
 {#            {% csrf_token %}#}
 {#            <small id="bidHelp" class="form-text">{{ bids }} bid(s) so far.#}
@@ -34,20 +42,20 @@
 {#        <form method="post">#}
             {% csrf_token %}
             <div class="form-group">
-                <small id="bidHelp" class="form-text">{{ bids }} bid(s) so far.
+                <small id="bidHelp" class="form-text">{{ listing.number_of_bids }} bid(s) so far.
                 {% if winner %}
                     Your bid is the current bid.
                 {% endif %}
                 </small>
-                <input type="number" id="bid" name="bid" step=".01" min="{{ listing.currentPrice|add:0.01 }}" max="9999999.99" class="form-control form-control-sm" aria-describedby="bidHelp" placeholder="Bid">
+                <input type="number" id="bid" name="bid" step=".01" min="{{ listing.price|add:0.01 }}" max="9999999.99" class="form-control form-control-sm" aria-describedby="bidHelp" placeholder="Bid">
             </div>
             <button type="submit" class="btn btn-primary">Place Bid</button>
         </form>
         <h3>Details</h3>
         <ul>
             <li>Listed by: {{ listing.creator }}</li>
-            {% if  listing.category  %}
-                <li>Category: {{ listing.category }}</li>
+            {% if  listing.product.category  %}
+                <li>Category: {{ listing.product.category }}</li>
             {% else %}
                 <li>Category: No Category Listed</li>
             {% endif %}
