@@ -37,7 +37,7 @@
         {% if listing.status == 'Active' %}
             <h2>${{ listing.price }}</h2>
             <small id="bidHelp" class="form-text">{{ listing.number_of_bids }} bid(s) so far.
-                {% if winner %}
+                {% if listing.winner == request.user %}
                     Your bid is the current bid.
                 {% endif %}
             </small>
@@ -51,15 +51,12 @@
             </form>
         {% else %}
             <div>
-            <strong>
-                Bidding for the listing has ended.
-                {% if winner %}
-                    You are the winner of this auction.
-                {% endif %}
-            </strong>
-    {#            <p>#}
-    {##}
-    {#            </p>#}
+                <strong>
+                    Bidding for this listing has ended.
+                    {% if listing.winner == request.user %}
+                        You are the winner of this auction.
+                    {% endif %}
+                </strong>
             </div>
         {% endif %}
 
