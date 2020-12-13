@@ -2,14 +2,27 @@
 
 {% block body %}
     <h2>Watchlist</h2>
-    TO DO
-
-{#    {% for listing in listings %}#}
-{#            <li>#}
-{#                <a href="{% url 'listing' flight.id %}">#}
-{#                    {{ listing.title }}: {{ listing.description }} {{ listing.currentPrice }}#}
-{#                </a>#}
-{#            </li>#}
-{#        {% endfor %}#}
-
+    <table class="table text-center table-hover">
+        <tbody>
+            {% for item in watchlist %}
+                <tr style="cursor: pointer; cursor: hand;" onclick="window.location='{% url "listing" item.listing.id %}';">
+                    <td>
+                        {% if item.listing.product.url  %}
+                            <img class="align-self-center img-fluid" src="{{ item.listing.product.url }}" alt="{{ item.listing.product.title }}" width="100" height="100" style="text-align: center">
+                        {% else %}
+                            <img class="align-self-center img-fluid mt-3" src="" alt="No photo" width="100" height="100" style="text-align: center">
+                        {% endif %}
+                    </td>
+                    <td>
+                        <h4>{{ item.listing.product.title }}</h4>
+                        <strong>Price: </strong>${{ item.listing.price }}
+                        <div class="text-muted">Created: {{ item.listing.created_at }}</div>
+                    </td>
+                    <td colspan="2"></td>
+                </tr>
+            {% empty %}
+                There are no items in your watchlist.
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
