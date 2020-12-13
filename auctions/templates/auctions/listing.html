@@ -5,19 +5,26 @@
 {% block body %}
     <div>
         <h2>Listing: {{ listing.product.title }}</h2>
-    {% if on_watchlist %}
-        <form action="{% url 'watchlist_remove' listing.id %}">
-            <button type="submit" class="btn">
-                <span class="badge badge-secondary">Watchlist</span>
-            </button>
-        </form>
-    {% else %}
-        <form action="{% url 'watchlist_add' listing.id %}">
-            <button type="submit" class="btn">
-                <span class="badge badge-primary">Watchlist</span>
-            </button>
-        </form>
-    {% endif %}
+        {% if listing.status == 'Closed' %}
+            <p class="text-danger">
+                The auction has been closed for the listing you wish to display.
+            </p>
+        {% endif %}
+        <div class="form-group">
+            {% if on_watchlist %}
+                <form action="{% url 'watchlist_remove' listing.id %}">
+                    <button type="submit" class="btn">
+                        <span class="badge badge-secondary">Watchlist</span>
+                    </button>
+                </form>
+            {% else %}
+                <form action="{% url 'watchlist_add' listing.id %}">
+                    <button type="submit" class="btn">
+                        <span class="badge badge-primary">Watchlist</span>
+                    </button>
+                </form>
+            {% endif %}
+        </div>
 
         {% if  listing.product.url  %}
             <img src="{{ listing.product.url }}" alt="{{ listing.product.title }}" width="300" height="300">
@@ -26,31 +33,37 @@
         {% endif %}
 
         <p>{{ listing.product.description }}</p>
-        <h2>${{ listing.price }}</h2>
-{#        <form action="{% url 'bid' %}">#}
-{#            {% csrf_token %}#}
-{#            <small id="bidHelp" class="form-text">{{ bids }} bid(s) so far.#}
-{#                {% if winner %}#}
-{#                    Your bid is the current bid.#}
-{#                {% endif %}#}
-{#            </small>#}
-{#            {{ form|crispy}}#}
-{#            <button type="submit" class="btn btn-primary">Place Bid</button>#}
-{#        </form>#}
 
-        <form action="{% url 'bid' listing.id %}" method="post">
-{#        <form method="post">#}
-            {% csrf_token %}
-            <div class="form-group">
-                <small id="bidHelp" class="form-text">{{ listing.number_of_bids }} bid(s) so far.
+        {% if listing.status == 'Active' %}
+            <h2>${{ listing.price }}</h2>
+            <small id="bidHelp" class="form-text">{{ listing.number_of_bids }} bid(s) so far.
                 {% if winner %}
                     Your bid is the current bid.
                 {% endif %}
-                </small>
-                <input type="number" id="bid" name="bid" step=".01" min="{{ listing.price|add:0.01 }}" max="9999999.99" class="form-control form-control-sm" aria-describedby="bidHelp" placeholder="Bid">
+            </small>
+
+            <form action="{% url 'bid' listing.id %}" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <input type="number" id="bid" name="bid" step=".01" min="{{ listing.price|add:0.01 }}" max="9999999.99" class="form-control form-control-sm" aria-describedby="bidHelp" placeholder="Bid">
+                </div>
+                <button type="submit" class="btn btn-primary">Place Bid</button>
+            </form>
+        {% else %}
+            <div>
+            <strong>
+                Bidding for the listing has ended.
+                {% if winner %}
+                    You are the winner of this auction.
+                {% endif %}
+            </strong>
+    {#            <p>#}
+    {##}
+    {#            </p>#}
             </div>
-            <button type="submit" class="btn btn-primary">Place Bid</button>
-        </form>
+        {% endif %}
+
+    <div class="mt-3">
         <h3>Details</h3>
         <ul>
             <li>Listed by: {{ listing.creator }}</li>
@@ -62,13 +75,16 @@
         </ul>
     </div>
 
+    </div>
 
+{% if request.user == listing.creator %}
+    <form action="{% url 'listing' listing.id %}" method="post">
+    {% csrf_token %}
+        <div class="form-group">
+            <button type="submit" class="btn btn-danger">Close Listing</button>
+        </div>
+    </form>
+{% endif %}
 
-{#    {% for listing in listings %}#}
-{#            <li>#}
-{#                <a href="{% url 'listing' listing.id %}">#}
-{#                    {{ listing.title }}: {{ listing.description }} {{ listing.currentPrice }}#}
-{#                </a>#}
-{#            </li>#}
-{#        {% endfor %}#}
 {% endblock %}
+
