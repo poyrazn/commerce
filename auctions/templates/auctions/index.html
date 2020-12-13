@@ -15,19 +15,19 @@
 {#        </thead>#}
         <tbody>
             {% for listing in listings %}
-                <tr style="cursor: pointer; cursor: hand;", onclick="window.location='{% url "listing" listing.id %}';">
+                <tr style="cursor: pointer; cursor: hand;" onclick="window.location='{% url "listing" listing.id %}';">
                     <td>
-                        {% if  listing.url  %}
-                            <img class="align-self-center img-fluid" src="{{ listing.url }}" alt="{{ listing.title }}" width="100" height="100" style="text-align: center">
+                        {% if  listing.product.url  %}
+                            <img class="align-self-center img-fluid" src="{{ listing.product.url }}" alt="{{ listing.product.title }}" width="100" height="100" style="text-align: center">
                         {% else %}
                             <img class="align-self-center img-fluid mt-3" src="" alt="No photo" width="100" height="100" style="text-align: center">
                         {% endif %}
                     </td>
                     <td>
-                        <h4>{{ listing.title }}</h4>
+                        <h4>{{ listing.product.title }}</h4>
 {#                        <a href="{% url 'listing' listing.id %}" class="stretched-link"></a>#}
-                        <strong>Price: </strong>${{ listing.currentPrice }}
-                        <div class="text-muted">Created: {{ listing.created }}</div>
+                        <strong>Price: </strong>${{ listing.price }}
+                        <div class="text-muted">Created: {{ listing.created_at }}</div>
                     </td>
                     <td colspan="2"></td>
                 </tr>
