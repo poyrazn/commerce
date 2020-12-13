@@ -28,23 +28,31 @@ class SubCategory(models.Model):
         return f"{self.parent.name}/{self.name}"
 
 
-class Listing(models.Model):
+class Product(models.Model):
     # title
     title = models.CharField(max_length=64)
     # description
     description = models.TextField()
     # starting price
     price = models.DecimalField(max_digits=9, decimal_places=2)
-    # current price
-    currentPrice = models.DecimalField(max_digits=9, decimal_places=2, default=price)
     # photo url
     url = models.URLField(blank=True)
     # category
-    category = models.ForeignKey(Category, blank=True, null=True, on_delete=models.CASCADE, related_name='listings', default=None)
+    category = models.ForeignKey(Category, blank=True, null=True, on_delete=models.CASCADE, related_name='listings',
+                                 default=None)
+
+
+class Listing(models.Model):
+    # product
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
     # created
-    created = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     # creator
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='listings')
+    # number of bids
+    number_of_bids = models.IntegerField()
+    # current price
+    price = models.DecimalField(max_digits=9, decimal_places=2)
 
     # status
     class Status(models.TextChoices):
@@ -54,7 +62,7 @@ class Listing(models.Model):
     status = models.TextField(choices=Status.choices, default=Status.Active)
 
     def __str__(self):
-        return f"{self.title} by {self.creator.username}"
+        return f"{self.product.title} by {self.creator.username}"
 
     # comments
 
@@ -70,9 +78,11 @@ class Bid(models.Model):
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='bids')
     # price
     price = models.DecimalField(max_digits=9, decimal_places=2)
+    # bid time
+    bid_time = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.price} on {self.listing.title} by {self.user.username}"
+        return f"{self.price} on {self.listing_id.product_id.title} by {self.user_id.username}"
 
 
 class Comment(models.Model):
@@ -82,6 +92,13 @@ class Comment(models.Model):
     listing = models.ForeignKey(Listing, blank=False, on_delete=models.CASCADE, related_name='comments')
     # comment
     comment = models.TextField()
+    # time sent
+    time_sent = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Comment on {self.listing.title} by {self.user.username}"
+        return f"Comment on {self.listing_id.product_id.title} by {self.user_id.username}"
+
+
+class Watchlist(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='watchlist')
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='watchlist')
