@@ -53,6 +53,8 @@ class Listing(models.Model):
     number_of_bids = models.IntegerField()
     # current price
     price = models.DecimalField(max_digits=9, decimal_places=2)
+    # winner
+    winner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='wins')
 
     # status
     class Status(models.TextChoices):
