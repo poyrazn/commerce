@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import CreateView
 # from .models import User, Listing, Category, Bid, Comment
 from .models import *
-from .forms import ProductForm, BidForm
+from .forms import ProductForm
 import decimal
 
 
@@ -107,11 +107,9 @@ def listing(request, listing_id):
     except Listing.DoesNotExist:
         return HttpResponseBadRequest("Bad Request: listing does not exist")
 
-    winner = False
+    # winner = False
     on_watchlist = False
     try:
-        if listing.number_of_bids != 0 and listing.bids.get(price=listing.price).user == request.user:
-            winner = True
         if request.user.is_authenticated:
             watchlist_item = request.user.watchlist.get(listing=listing)
             on_watchlist = True
@@ -120,7 +118,7 @@ def listing(request, listing_id):
     except Watchlist.DoesNotExist:
         return HttpResponseBadRequest("Bad Request: watchlist does not exist")
 
-    return render(request, "auctions/listing.html", {"listing": listing, "winner": winner, "on_watchlist": on_watchlist})
+    return render(request, "auctions/listing.html", {"listing": listing, "on_watchlist": on_watchlist})
 
 
 @login_required(login_url='login', redirect_field_name='watchlist')
