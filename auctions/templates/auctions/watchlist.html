@@ -5,7 +5,11 @@
     <table class="table text-center table-hover">
         <tbody>
             {% for item in watchlist %}
-                <tr style="cursor: pointer; cursor: hand;" onclick="window.location='{% url "listing" item.listing.id %}';">
+                {% if item.listing.status == 'Closed' %}
+                    <tr class="table-danger" style="cursor: pointer; cursor: hand;" onclick="window.location='{% url "listing" item.listing.id %}';">
+                {% else %}
+                    <tr style="cursor: pointer; cursor: hand;" onclick="window.location='{% url "listing" item.listing.id %}';">
+                {% endif %}
                     <td>
                         {% if item.listing.product.url  %}
                             <img class="align-self-center img-fluid" src="{{ item.listing.product.url }}" alt="{{ item.listing.product.title }}" width="100" height="100" style="text-align: center">
