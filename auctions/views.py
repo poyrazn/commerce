@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import CreateView
 # from .models import User, Listing, Category, Bid, Comment
 from .models import *
-from .forms import ListingForm, BidForm
+from .forms import ProductForm, BidForm
 import decimal
 
 
@@ -105,26 +105,26 @@ def listing(request, listing_id):
     # Title, description, photo (if exists), category, current price of the listing, comments on the listing
     if listing.status == 'Active':
         winner = False
+        on_watchlist = False
         try:
-            bids_count = listing.bids.count()
-            comments = listing.comments.all()
-            if bids_count != 0 and listing.bids.get(price=listing.currentPrice).user == request.user:
+            if listing.number_of_bids != 0 and listing.bids.get(price=listing.price).user == request.user:
                 winner = True
-            print("Comments:")
-            print(comments)
-            print("Number of bids:")
-            print(bids_count)
+            if request.user.is_authenticated:
+                watchlist_item = request.user.watchlist.get(listing=listing)
+                on_watchlist = True
             # winner = Bid.objects.get(price=listing.currentPrice, listing=listing_id).user
         except Bid.DoesNotExist:
-            print("Does not exist")
-        return render(request, "auctions/listing.html", {"listing": listing, "comments": comments, "bids": bids_count, "winner": winner, "form": BidForm()})
+            print("Bid does not exist")
+        except Watchlist.DoesNotExist:
+            print("Not on watchlist")
+
+        return render(request, "auctions/listing.html", {"listing": listing, "winner": winner, "form": BidForm(), "on_watchlist": on_watchlist})
 
     # if listing is closed by the creator and the user(visitor) has won, it is shown on the page
     else:
         try:
-            winner = listing.bids.get(price=listing.currentPrice).user
-            # print(winner)
-            # winner = Bid.objects.get(price=listing.currentPrice, listing=listing_id).user
+            winner = listing.bids.get(price=listing.price).user
+
         except Bid.DoesNotExist:
             winner = False
             print("Does not exist")
@@ -135,7 +135,8 @@ def listing(request, listing_id):
 
 @login_required(login_url='login', redirect_field_name='watchlist')
 def watchlist(request):
-    return render(request, "auctions/watchlist.html")
+    watchlist = request.user.watchlist.all()
+    return render(request, "auctions/watchlist.html", {"watchlist": watchlist})
 
 
 @login_required(login_url='login', redirect_field_name='create_listing')
@@ -145,7 +146,7 @@ def create_listing(request):
     :return: page with a form that allows user to create a listing
     """
     if request.method == "POST":
-        form = ListingForm(request.POST)
+        form = ProductForm(request.POST)
         if form.is_valid():
             title = form.cleaned_data["title"]
             description = form.cleaned_data["description"]
@@ -156,44 +157,77 @@ def create_listing(request):
             try:
                 category = Category.objects.get(pk=int(category_id))
             except Category.DoesNotExist:
-                new_listing = Listing(title=title, description=description, price=price, currentPrice=price, url=url,
-                                      creator=creator)
-                new_listing.save()
+                product = Product(title=title, description=description, price=price, url=url)
+                product.save()
+                listing = Listing(product=product, creator=creator, number_of_bids=0, price=price)
+                listing.save()
                 return HttpResponseRedirect(reverse("index"))
 
-            new_listing = Listing(title=title, description=description, price=price, currentPrice=price, url=url, category=category, creator=creator)
-            new_listing.save()
+            product = Product(title=title, description=description, price=price, url=url, category=category)
+            product.save()
+            listing = Listing(product=product, creator=creator, number_of_bids=0, price=price)
+            listing.save()
             return HttpResponseRedirect(reverse("index"))
 
     else:
         return render(request, "auctions/add.html", {
-            "form": ListingForm()
+            "form": ProductForm()
         })
 
 
-def watchlist_add(request):
-    pass
+@login_required(login_url='login', redirect_field_name='listing')
+def watchlist_add(request, listing_id):
+    """
+    allows users to add the listing on their watchlist
+    :param request: HTTP request
+    :param listing_id: listing id (pk)
+    :return:
+    """
+
+    try:
+        listing = Listing.objects.get(pk=listing_id)
+    except Listing.DoesNotExist:
+        print("listing does not exist")
+        return HttpResponseRedirect(reverse("index"))
+    watchlist_item = Watchlist(user=request.user, listing=listing)
+    watchlist_item.save()
+    # request.user.watchlist.add(listing)
+    return HttpResponseRedirect(reverse("index"))
 
 
-def watchlist(request):
-    pass
+@login_required(login_url='login', redirect_field_name='listing')
+def watchlist_remove(request, listing_id):
+
+    """
+    allows users to remove the listing from their watchlist
+    :param request: HTTP request
+    :param listing_id: listing id (pk)
+    :return:
+    """
+
+    try:
+        listing = Listing.objects.get(pk=listing_id)
+    except Listing.DoesNotExist:
+        print("listing does not exist")
+        return HttpResponseRedirect(reverse("index"))
+    watchlist_item = request.user.watchlist.get(listing=listing)
+    watchlist_item.delete()
+    return HttpResponseRedirect(reverse("index"))
+
 
 
 @login_required(login_url='login', redirect_field_name='listing')
 def bid(request, listing_id):
-    # form = BidForm(request.POST)
-    # form.validate()
-    # print(form.cleaned_data['bid'])
-    # if form.is_valid():
-    #     print(form.cleaned_data['bid'])
-    # else:
-    #     print("Not Valid")
-    #     print(form.errors)
-    # decimal.getcontext().prec = 2
+    """
+    allows users to bid on a listing
+    :param request: HTTP request
+    :param listing_id: listing id (pk)
+    :return:
+    """
     bid = decimal.Decimal(request.POST['bid'])
     listing = Listing.objects.get(pk=listing_id)
 
-    if bid <= listing.currentPrice:
+    if bid <= listing.price:
         print(bid)
         print(type(bid))
         return HttpResponseBadRequest("Bad Request: Your bid cannot be less than or equal to the current bid.")
@@ -206,10 +240,10 @@ def bid(request, listing_id):
     except User.DoesNotExist:
         return HttpResponseRedirect(reverse("index"))
 
-    # new_bid = Bid(user=user, listing=listing, price=bid)
-    # new_bid.save()
     new_bid = Bid.objects.create(user=user, listing=listing, price=bid)
     listing.bids.add(new_bid)
-    listing.currentPrice = bid
+    listing.price = bid
+    listing.number_of_bids += 1
     listing.save()
-    return HttpResponseRedirect("/")
+    return HttpResponseRedirect(reverse("listing", args=[listing_id]))
+
